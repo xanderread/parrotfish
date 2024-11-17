@@ -6,6 +6,31 @@ import torch
 import torch.nn as nn
 from torch.utils.data import Dataset
 from datetime import datetime, timedelta
+from typing import List
+
+# area to fish is the circle plot that trident will give you after running the algo
+class FishingHotspot:
+    def __init__(self, lat: float, long: float, tags: List[str]):
+        self.lat = lat
+        self.long = long
+        self.tags = tags
+        self.number_of_fish = 0.0
+
+    def get_number_of_fish(self):
+        return self.number_of_fish
+
+    def get_tags(self):
+        return self.tags
+
+    def get_lat(self):
+        return self.lat
+
+    def get_long(self):
+        return self.long
+
+    
+    def set_number_of_fish(self, fish: int):
+        self.number_of_fish = fish
 
 # Prepare Dataset
 class FishDistributionDataset(Dataset):
@@ -113,3 +138,81 @@ class FishPrediction():
 
         # np.arange(solution[1][0], solution[1][1], 0.2), np.arange(solution[1][2], solution[1][3], 0.2) -> Converts bbox coords to grid points
         
+    def bounds_to_coords(self, bounds):
+        """
+            Convert the bounding box to a list of coordinates.
+        """
+        return np.arange(bounds[0], bounds[1], 0.2), np.arange(bounds[2], bounds[3], 0.2)
+    
+    def prediction_to_hotspots(self, prediction, starting_lat, starting_lon, max_radius, species) -> List[FishingHotspot]:
+        """
+            Given a prediction, cut down to only cells outside of the max_radius from the starting_lat and starting_lon.
+            Perform clustering on the remaining grid to find the hotspots.
+            Return their coordinates and the number of fish in that hotspot (density cubed).
+
+            Parameters: prediction: 2D numpy array of values
+            Starting_lat: float
+            Starting_lon: float
+            Max_radius: float (km)
+            species: string
+        """
+        x_coords, y_coords = self.bounds_to_coords(prediction[1])
+        valid_points = []
+
+        for i, lat in enumerate(y_coords):
+            for j, lon in enumerate(x_coords):
+                # Calculate distance from starting point
+                distance = geopy.distance.distance(start_lat, start_lon, lat, lon).km
+                
+                if distance <= max_radius and prediction[i, j] > 0:
+                    valid_points.append([lat, lon, prediction[i, j]])
+        
+        if valid_points == []:
+            return []
+        
+        hotspots = []
+
+        # Perform DBSCAN clustering
+        # eps is in degrees (approximately 1km at the equator)
+        eps = 0.009
+        min_samples = 3
+        clustering = DBSCAN(eps=eps, min_samples=min_samples).fit(valid_points[:, :2])
+
+        clustering = DBSCAN(eps=eps, min_samples=min_samples).fit(valid_points[:, :2])
+        labels = clustering.labels_
+
+        unique_labels = set(labels)
+
+        for label in unique_labels:
+            if label == -1:  # Skip noise points
+                continue
+                
+            # Get points in cluster
+            cluster_mask = labels == label
+            cluster_points = valid_points[cluster_mask]
+            
+            # Calculate cluster center (weighted by prediction values)
+            weights = cluster_points[:, 2]
+            center_lat = np.average(cluster_points[:, 0], weights=weights)
+            center_lon = np.average(cluster_points[:, 1], weights=weights)
+            
+            # Calculate average intensity
+            avg_intensity = np.mean(cluster_points[:, 2])
+            
+            hotspot = {
+                'center_latitude': float(center_lat),
+                'center_longitude': float(center_lon),
+                'intensity': float(avg_intensity),
+            }
+
+            hostpot = FishingHotspot(
+                lat=center_lat,
+                long=center_lon,
+                tags=[f"species:{species}"]
+            )
+            
+            hostpot.set_number_of_fish(float(avg_intensity))
+
+            hotspots.append(hotspot)
+
+        return hotspots

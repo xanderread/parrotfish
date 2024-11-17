@@ -5,7 +5,6 @@ from datetime import datetime
 from enum import Enum
 import numpy as np
 from fish_prediction import FishPrediction
-import python_weather
 from trajectory.backend_predict import predict
 from weather import WeatherSailingScore
 import asyncio
@@ -81,55 +80,7 @@ def get_species_hotspots(start_lat: float, start_long: float, radius: float, spe
         return []
 
     population_density, bbox = fish_prediction.predict(region, species, date)
-    x_coords = np.arange(bbox[0], bbox[1], 0.2)
-    y_coords = np.arange(bbox[2], bbox[3], 0.2)
-    
-    hotspots = []
-    # Find local maxima in the population density
-    height, width = population_density.shape
-    for i in range(height):
-        for j in range(width):
-            if population_density[i][j] > 0:
-                # Create potential new hotspot
-                new_hotspot = FishingHotspot(
-                    lat=y_coords[i],
-                    long=x_coords[j],
-                    tags=[f"species:{species}"]
-                )
-                new_hotspot.set_number_of_fish(float(population_density[i][j]))
-                
-                # Check distance from all existing hotspots
-                too_close = False
-                for existing_hotspot in hotspots:
-                    dist = haversine_distance(
-                        new_hotspot.get_lat(), new_hotspot.get_long(),
-                        existing_hotspot.get_lat(), existing_hotspot.get_long()
-                    )
-                    if dist < MIN_DISTANCE_BETWEEN_HOTSPOTS:
-                        too_close = True
-                        break
-                
-                if not too_close:
-                    hotspots.append(new_hotspot)
-    
-    print("got " + str(len(hotspots)) + " hotspots")
-    return hotspots
-
-def haversine_distance(lat1: float, lon1: float, lat2: float, lon2: float) -> float:
-    """Calculate the distance between two points on Earth in meters."""
-    R = 6371000  # Earth's radius in meters
-    
-    lat1_rad = np.radians(lat1)
-    lat2_rad = np.radians(lat2)
-    delta_lat = np.radians(lat2 - lat1)
-    delta_lon = np.radians(lon2 - lon1)
-    
-    a = (np.sin(delta_lat/2) ** 2 + 
-         np.cos(lat1_rad) * np.cos(lat2_rad) * 
-         np.sin(delta_lon/2) ** 2)
-    c = 2 * np.arctan2(np.sqrt(a), np.sqrt(1-a))
-    
-    return R * c
+    return fish_prediction.prediction_to_hotspots(population_density, start_lat, start_long, radius, species)
 
 
 
