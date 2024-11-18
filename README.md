@@ -10,8 +10,11 @@ The pitch was essentially to create an agent that plans fishing expeditions, sav
 Built by 
 [tony](https://www.linkedin.com/in/tony-dalziel-553025223/
 )
+
 [alex](https://www.linkedin.com/in/alexmarcelread/
 )
+
 [shanai](https://www.linkedin.com/in/shanai-nair-1a346a1b7/
 )
+
 [kelechi](https://www.linkedin.com/in/kelechi-stewart-41433913b/)
