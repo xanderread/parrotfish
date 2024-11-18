@@ -6,3 +6,9 @@ The pitch was essentially to create an agent that plans fishing expeditions, sav
 
 [Watch the demo here!](https://www.youtube.com/watch?v=oiYNkIQfmSM
 )
+
+Built by 
+https://www.linkedin.com/in/tony-dalziel-553025223/
+https://www.linkedin.com/in/alexmarcelread/
+https://www.linkedin.com/in/shanai-nair-1a346a1b7/
+https://www.linkedin.com/in/kelechi-stewart-41433913b/
