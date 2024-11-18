@@ -233,7 +233,8 @@ class ParrotfishAI:
 
 def main():
     # Example usage
-    api_key = "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"
+    # take out 
+    # api_key = "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"
     assistant = ParrotfishAI(api_key)
     
     print("Welcome to Parrotfish.ai!")

@@ -12,15 +12,13 @@ import os
 import random
 Meters = NewType('Meters', float)
 
-HOTSPOT_RADIUS = Meters(1000)
-CANDIDATE_HOTSPOTS = 10
-MIN_DISTANCE_BETWEEN_HOTSPOTS = Meters(500000)
+ALPHA = Meters(1000)
+BETA = 10
+GAMMA = Meters(500000)
 
 # Scoring constants
-WEATHER_WEIGHT = 0 # for now
-SHIP_WEIGHT = 0.5
-
-
+OMEGA = 0
+SIGMA = 0.5
 
 fish_prediction = FishPrediction()
 weather_sailing_score = WeatherSailingScore()
@@ -50,23 +48,21 @@ class FishingHotspot:
         self.number_of_fish = fish
 
 
-def get_number_of_ships_in_hotspot(hotspot: FishingHotspot, time_of_fishing: datetime) -> int:
-    # call kelechi's ship api
-    print("time of fishing", time_of_fishing)
-    days_ahead = abs((time_of_fishing - datetime.now()).days)
-    print("days ahead", days_ahead)
-    predictions = predict(days_ahead)
-    print("predictions", predictions)
-    count = 0
-    # check how many of the predictions are in the HOTSPOT_RADIUS
-    for prediction in predictions:
-        if haversine_distance(hotspot.get_lat(), hotspot.get_long(), prediction[0], prediction[1]) < HOTSPOT_RADIUS:
-            count += 1
-    if count == 0:
+def get_number_of_ships_in_hotspot(hotspot: FishingHotspot, tau: datetime) -> int:
+    print("time of fishing", tau)
+    delta = abs((tau - datetime.now()).days)
+    print("days ahead", delta)
+    epsilon = predict(delta)
+    print("predictions", epsilon)
+    kappa = 0
+    for prediction in epsilon:
+        if haversine_distance(hotspot.get_lat(), hotspot.get_long(), prediction[0], prediction[1]) < ALPHA:
+            kappa += 1
+    if kappa == 0:
         print("no ships in hotspot")
         return 0
-    print("got " + str(count) + " ships in hotspot")
-    return count
+    print("got " + str(kappa) + " ships in hotspot")
+    return kappa
 
 
 def get_species_hotspots(start_lat: float, start_long: float, radius: float, species: str, date: datetime) -> List[FishingHotspot]:
@@ -90,13 +86,13 @@ def get_species_hotspots(start_lat: float, start_long: float, radius: float, spe
 #             'conditions': weather_data
 #         }
 
-def get_hotspot_score(hotspot: FishingHotspot, time_of_fishing: datetime) -> float:
-    weather_score_tuple = weather_sailing_score.get_weather_score(hotspot.get_lat(), hotspot.get_long(), time_of_fishing)
-    weather_score = float(weather_score_tuple[0])
-    ship_count = get_number_of_ships_in_hotspot(hotspot, time_of_fishing)
-    ship_score = 1.0 / (ship_count + 1)
+def get_hotspot_score(hotspot: FishingHotspot, tau: datetime) -> float:
+    lambda_score = weather_sailing_score.get_weather_score(hotspot.get_lat(), hotspot.get_long(), tau)
+    mu = float(lambda_score[0])
+    nu = get_number_of_ships_in_hotspot(hotspot, tau)
+    xi = 1.0 / (nu + 1)
     
-    return WEATHER_WEIGHT * weather_score + SHIP_WEIGHT * ship_score
+    return OMEGA * mu + SIGMA * xi
 
 
 def run(start_lat: float, start_long: float, max_distance: int, time_of_fishing: datetime, species: str) -> List[FishingHotspot]:

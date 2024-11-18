@@ -54,7 +54,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-API_KEY = "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"
+API_KEY = os.getenv("PARROTFISH_API_KEY")
 
 @app.post("/chat", response_model=ChatResponse)
 async def chat(request: ChatRequest):
